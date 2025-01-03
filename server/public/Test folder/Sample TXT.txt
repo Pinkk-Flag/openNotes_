@@ -1,0 +1,3 @@
+Hello!
+
+If you are somehow reading this, this is the sample TXT file for openNotes_!
