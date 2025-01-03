@@ -19,4 +19,3 @@ model User {
   password  String
   tokens    Int
 }
-

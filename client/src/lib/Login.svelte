@@ -1,27 +1,118 @@
 <script>
+    const apiBase = "http://localhost:8000"
 
+    let currentState = $state("Login"); 
+    
+    let token = localStorage.getItem('token')
+    let currentModalHeader = $state("Login");
+    let currentModalMessage = $state("Login to an existing account!");
+    let submitButton = $state("Login");
+    let bottomMessage = $state("Don't have an account?");
+    let emailValue = $state('');
+    let passwordValue = $state('');
+    let error = $state('');
+    let isAuthenticating = $state(false);
+    let authText = $state('');
+
+    const toggleState = () => {
+        if (currentState === "Login") {
+            currentState = "Signup";
+            currentModalHeader = "Sign up";
+            currentModalMessage = "Create a new account below!";
+            submitButton = "Create account";
+            bottomMessage = "Already have an account?";
+            authText = "";
+        } else {
+            currentState = "Login";
+            currentModalHeader = "Login";
+            currentModalMessage = "Login to an existing account!";
+            submitButton = "Login";
+            bottomMessage = "Don't have an account?";
+            authText = "";
+        }
+    };
+
+    const authenticate = async () => {
+    authText = "";
+    if (!emailValue || !passwordValue) {
+        error = 'Email and password are required.';
+        return;
+    }
+
+    if (!emailValue.includes('@')) {
+        authText = "Email is incorrect!";
+        return;
+    } else if (passwordValue.length < 6) {
+        authText = "Password is not long enough!";
+        return;
+    } else if (isAuthenticating) {
+        authText = "Already authenticating...";
+        return;
+    }
+
+    authText = "";
+    isAuthenticating = true;
+
+    try {
+        let data;
+        let response;
+
+        if (currentState === "Login") {
+            response = await fetch(apiBase + "/auth/login", {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username: emailValue, password: passwordValue })
+            });
+
+            if (response.ok) {
+                data = await response.json();
+                // Store token in localStorage
+                localStorage.setItem('token', data.token);
+            }
+        } else if (currentState === "Signup") {
+            response = await fetch(apiBase + "/auth/register", {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username: emailValue, password: passwordValue })
+            });
+        }
+
+        if (!response.ok) {
+            throw new Error("Authentication failed");
+        }
+    } catch (err) {
+        console.error(err);
+        isAuthenticating = false;
+        authText = err.message || err;
+    }
+};
 </script>
 
-<body>
+<div>
+    <p id="openNotesTextLogo">openNotes_</p>
+    <section id="auth">
+        <div>
+            <h2>{currentModalHeader}</h2>
+            <p>{currentModalMessage}</p>
+        </div>
+        <input bind:value={emailValue} id="emailInput" placeholder="Email" />
+        <input bind:value={passwordValue} id="passwordInput" placeholder="********" type="password" />
+        <p>{authText}</p>
+        <button onclick={(event) => {
+            authenticate();
+        }}>{submitButton}</button>
+        <div>
+            <br>
+            <p>{bottomMessage}</p>
+            <button onclick={toggleState}>{currentState === "Login" ? "Sign up" : "Login"}</button>
+        </div>
+    </section>
+</div>
 
-    <div>
-        <p id="openNotesTextLogo">openNotes_</p>
-        <section id="auth">
-            <div>
-                <h2>Login</h2>
-                <p>Create an account!</p>
-            </div>
-            <input id="emailInput" placeholder="Email" />
-            <input id="passwordInput" placeholder="********" type="password" />
-            <button>Submit</button>
-            <hr />
-            <div>
-                <p>Don't have an account?</p>
-                <button>Sign up</button>
-            </div>
-        </section>
-    </div>
-</body>
 
 <style>
     /* Use a consistent font family */
@@ -30,21 +121,12 @@
         box-sizing: border-box;
     }
 
-    /* Body styling for centering */
-    body {
-        margin: 0;
-        display: flex;
-        justify-content: center; /* Horizontal centering */
-        align-items: center;     /* Vertical centering */
-        min-height: 100vh;       /* Ensure body is at least viewport height */
-        background-color: #f5f5f5;
-    }
 
     #auth {
             background-color: #d9f7be;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
             border-radius: 16px;
-            padding: 3rem;
+            padding: 2rem;
             max-width: 500px; /* Use max-width for responsiveness */
             width: 90%; /* Occupy 90% of the parent width */
             margin: 0 auto; /* Center horizontally */
@@ -98,13 +180,6 @@
 
     #auth button:hover {
         background-color: #0056b3;
-    }
-
-    /* Divider line */
-    #auth hr {
-        border: none;
-        border-top: 1px solid #eeeeee;
-        margin: 2rem 0;
     }
 
     /* Bottom section */

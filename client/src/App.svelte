@@ -5,10 +5,6 @@
   import Login from "./lib/Login.svelte";
 
   let loggedIn = false;
-  const handleLoginSuccess = () => {
-    loggedIn = true; // Update login status
-  };
-
 
 </script>
 
@@ -21,6 +17,8 @@
   <Library></Library>
 
   <Bottom></Bottom>
+
+
 {/if}
 </main>
 

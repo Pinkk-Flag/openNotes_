@@ -23,6 +23,11 @@ app.use(cors(corsOptions))
 //==============================================================
 
 app.use('/files', fileRoutes);
+app.use('/auth', authMiddleware, authRoutes);
+
+app.get('/', (req, res) => {
+    res.send("<p> Server up and running! </p>");
+});
 
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
