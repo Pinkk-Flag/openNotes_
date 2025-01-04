@@ -1,9 +1,9 @@
 <script>
-    const apiBase = "http://localhost:8000"
+    let { loggedIn, setLoggedIn } = $props();
 
-    let currentState = $state("Login"); 
-    
-    let token = localStorage.getItem('token')
+    const apiBase = "http://localhost:8000";
+    let currentState = $state("Login");
+    let token = localStorage.getItem('token');
     let currentModalHeader = $state("Login");
     let currentModalMessage = $state("Login to an existing account!");
     let submitButton = $state("Login");
@@ -40,7 +40,7 @@
     }
 
     if (!emailValue.includes('@')) {
-        authText = "Email is incorrect!";
+        authText = "Email is incorrectly parsed!";
         return;
     } else if (passwordValue.length < 6) {
         authText = "Password is not long enough!";
@@ -68,21 +68,27 @@
 
             if (response.ok) {
                 data = await response.json();
-                // Store token in localStorage
                 localStorage.setItem('token', data.token);
+                console.log('Token being sent:', localStorage.getItem('token')); // Add this line to check the token value
+
+                setLoggedIn(true); // Update loggedIn state in the parent
+            } else {
+                const errorDetails = await response.json();
+                throw new Error(`Authentication failed: ${errorDetails.message}`);
             }
         } else if (currentState === "Signup") {
             response = await fetch(apiBase + "/auth/register", {
                 method: 'POST',
                 headers: { 
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ username: emailValue, password: passwordValue })
             });
-        }
 
-        if (!response.ok) {
-            throw new Error("Authentication failed");
+            if (!response.ok) {
+                const errorDetails = await response.json();
+                throw new Error(`Authentication failed: ${errorDetails.message}`);
+            }
         }
     } catch (err) {
         console.error(err);
@@ -91,6 +97,8 @@
     }
 };
 </script>
+
+  
 
 <div>
     <p id="openNotesTextLogo">openNotes_</p>

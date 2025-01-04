@@ -1,6 +1,5 @@
-<script lang="ts">
-
-
+<script>
+    let tokens = $state();
 
 </script>
 
@@ -8,7 +7,9 @@
     <div>
        <p id="openNotesTextLogo">openNotes_</p> 
     </div>
-
+    <div>
+        <p>Current amount of tokens: {tokens}</p>
+    </div>
 
 </main>
 

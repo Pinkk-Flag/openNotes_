@@ -3,15 +3,32 @@ import { onMount } from "svelte";
 
 let files = $state([]);
 let isLoading = true;
+const apiBase = 'http://localhost:8000';
 
 async function fetchFiles() {
     try {
-        const response = await fetch('http://localhost:8000/files/api/filedata');
+        // Get the token from local storage
+        const token = localStorage.getItem('token');
+        if (!token) {
+            throw new Error('No token found');
+        }
+
+        const response = await fetch(apiBase + '/files/api/filedata', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': token,
+            },
+        });
+
         if (!response.ok) {
             throw new Error(`Error: ${response.statusText}`);
         }
-        files = await response.json();
+
+        const data = await response.json();
+        files = data; // Assign the fetched files to the files variable
     } catch (err) {
+        console.error('Error fetching files:', err.message);
     } finally {
         isLoading = false;  // Set loading state to false after fetching
     }
@@ -62,12 +79,67 @@ function fetchCurrentResources(arrayOfObjectFiles, path) {
     return currentResources;
 }
 
+async function fetchUserTokens() {
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(apiBase + '/auth/tokens', {
+            method: 'GET',
+            headers: {
+                'Authorization': token, // Replace with your token storage mechanism
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error(`Error fetching tokens: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log(`User has ${data.tokens} tokens`);
+        return data.tokens;
+    } catch (error) {
+        console.error("Error:", error);
+        return null;
+    }
+}
+
+async function downloadFile(filePath) {
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(apiBase + `/files/download${filePath}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': token,
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error(`Error downloading file: ${response.statusText}`);
+        }
+
+        const blob = await response.blob();
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = filePath.split('/').pop();  // Extract the file name from the path
+        link.click();  // Trigger the download
+    } catch (error) {
+        console.error("Error downloading file:", error);
+    }
+}
+
+async function afterLinkDownloadEvent(filePath) {
+    downloadFile(filePath);
+    fetchUserTokens();
+}
+
+
 let currentResources = $state([]);
 let currentPath = $state(getCurrentPath());
 
 $effect(() => {
     currentResources = fetchCurrentResources(files, currentPath);
 })
+
 
 
 </script>
@@ -95,7 +167,10 @@ $effect(() => {
                         {#if file.type === 'folder'}
                             <a href={file.path}>{file.name}</a>
                         {:else}
-                            <a href="http://localhost:8000/files/download{file.path}" target="_blank">{file.name}</a>
+                        <a href="#" onclick={(event) => { 
+                            event.preventDefault(); 
+                            afterLinkDownloadEvent(file.path); 
+                        }}>{file.name}</a>
                         {/if}
                     </td>
                 </tr>

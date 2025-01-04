@@ -3,9 +3,12 @@ import prisma from '../../prismaClient.js';
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import multer from "multer";
+import authMiddleware from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
+// Helper function to read files recursively
 const readFilesRecursively = (dir, basepath = '') => {
     const results = [];
     const items = fs.readdirSync(dir);
@@ -36,8 +39,25 @@ const readFilesRecursively = (dir, basepath = '') => {
     return results;
 };
 
+// File storage configuration
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+      cb(null, './public');
+    },
+    filename: function (req, file, cb) {
+      const originalName = file.originalname;
+      const timestamp = Date.now();
+      const fileName = `${originalName}`;
+      cb(null, fileName);
+    },
+});
 
-// ENDPOINTS ===============================
+const upload = multer({
+     storage: storage,
+     limits: {
+        fileSize: 5 * 1024 * 1024, // 5MB max file size
+     }
+});
 
 router.get('/api/filedata', (req, res) => {
     try {
@@ -49,8 +69,32 @@ router.get('/api/filedata', (req, res) => {
     }
 });
 
+router.post('/upload', upload.single('file'), async (req, res) => {
+    const userId = req.user.id; // Assuming user is authenticated and userId is available
+
+    if (!req.file) {
+        return res.status(400).send('No file uploaded');
+    }
+
+    // Check if user has enough tokens (30 tokens for upload)
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+    });
+
+
+    // Deduct 30 tokens for uploading
+    await prisma.user.update({
+        where: { id: userId },
+        data: {
+            tokens: user.tokens + 30,
+        },
+    });
+
+    res.status(200).send('File uploaded successfully');
+});
+
 router.get('/download/*', async (req, res) => {
-    const filePath = decodeURIComponent(req.params[0]); // Get the full path after /download/
+    const filePath = decodeURIComponent(req.params[0]);
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = path.dirname(__filename);
     const absolutePath = path.join(__dirname, "../../public", filePath);
@@ -58,6 +102,24 @@ router.get('/download/*', async (req, res) => {
     if (!fs.existsSync(absolutePath)) {
         return res.status(404).json({ message: "File not found" });
     }
+
+    // const userId = req.user.id; // Assuming user is authenticated and userId is available
+    // const user = await prisma.user.findUnique({
+    //     where: { id: userId },
+    // });
+
+    // // Check if user has enough tokens (10 tokens for download)
+    // if (user.tokens < 10) {
+    //     return res.status(400).send('Not enough tokens to download file');
+    // }
+
+    // // Deduct 10 tokens for downloading
+    // await prisma.user.update({
+    //     where: { id: userId },
+    //     data: {
+    //         tokens: user.tokens + 5000,
+    //     },
+    // });
 
     res.download(absolutePath, path.basename(filePath), (err) => {
         if (err) {
@@ -67,8 +129,8 @@ router.get('/download/*', async (req, res) => {
     });
 });
 
-router.delete('/download/*', (req,res) => {
-    res.sendStatus(403);
+router.get('/upload', (req, res) => {
+    res.send("<p>Hello! This is the upload area of openNotes_</p>");
 });
 
 export default router;
