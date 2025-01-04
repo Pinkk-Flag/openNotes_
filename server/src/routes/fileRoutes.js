@@ -8,6 +8,9 @@ import authMiddleware from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
+const downloadPenalty = 10;
+const uploadReward = 30;
+
 // Helper function to read files recursively
 const readFilesRecursively = (dir, basepath = '') => {
     const results = [];
@@ -86,7 +89,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     await prisma.user.update({
         where: { id: userId },
         data: {
-            tokens: user.tokens + 30,
+            tokens: user.tokens + uploadReward,
         },
     });
 
@@ -103,23 +106,23 @@ router.get('/download/*', async (req, res) => {
         return res.status(404).json({ message: "File not found" });
     }
 
-    // const userId = req.user.id; // Assuming user is authenticated and userId is available
-    // const user = await prisma.user.findUnique({
-    //     where: { id: userId },
-    // });
+    const userId = req.user.id; // Assuming user is authenticated and userId is available
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+    });
 
-    // // Check if user has enough tokens (10 tokens for download)
-    // if (user.tokens < 10) {
-    //     return res.status(400).send('Not enough tokens to download file');
-    // }
+    // Check if user has enough tokens (10 tokens for download)
+    if (user.tokens < 10) {
+        return res.status(400).send('Not enough tokens to download file');
+    }
 
-    // // Deduct 10 tokens for downloading
-    // await prisma.user.update({
-    //     where: { id: userId },
-    //     data: {
-    //         tokens: user.tokens + 5000,
-    //     },
-    // });
+    // Deduct 10 tokens for downloading
+    await prisma.user.update({
+        where: { id: userId },
+        data: {
+            tokens: user.tokens - downloadPenalty,
+        },
+    });
 
     res.download(absolutePath, path.basename(filePath), (err) => {
         if (err) {

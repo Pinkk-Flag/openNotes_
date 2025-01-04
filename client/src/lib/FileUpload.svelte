@@ -39,7 +39,6 @@
     };
 
     async function fetchUserTokens() {
-      console.log("fetch user tokens function reached")
     try {
         const response = await fetch(apiBase + '/auth/tokens', {
             method: 'GET',
@@ -66,12 +65,17 @@ const handleInputChange = (event) => {
         handleFileChange(event);
         fetchUserTokens();
     };
+
+const uploadFileWrapper = async () => {
+        await fetchUserTokens();
+        uploadFile();
+    };
   </script>
   
   <div class="upload-container">
     <h2>Upload a File</h2>
     <input type="file" onchange={(event) => handleInputChange(event)} />
-    <button onclick={uploadFile} class="upload-button">Upload</button>
+    <button onclick={uploadFileWrapper} class="upload-button">Upload</button>
   </div>
   
   <style>
