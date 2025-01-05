@@ -1,9 +1,13 @@
 <script lang="js">
 import { onMount } from "svelte";
+import emitter from './eventEmitter.js';
+
+const apiBase = 'http://localhost:8000';
+let tokens = null;
+
 
 let files = $state([]);
 let isLoading = true;
-const apiBase = 'http://localhost:8000';
 
 async function fetchFiles() {
     try {
@@ -95,11 +99,19 @@ async function fetchUserTokens() {
         }
 
         const data = await response.json();
-        console.log(`User has ${data.tokens} tokens`);
         return data.tokens;
     } catch (error) {
         console.error("Error:", error);
         return null;
+    }
+}
+
+export async function fetchAndUpdateTokens() {
+    try {
+        tokens = await fetchUserTokens(); // Fetch tokens asynchronously
+        emitter.emit('tokensUpdated', tokens); // Notify listeners
+    } catch (error) {
+        console.error('Error fetching tokens in library.js:', error);
     }
 }
 
@@ -129,7 +141,15 @@ async function downloadFile(filePath) {
 
 async function afterLinkDownloadEvent(filePath) {
     downloadFile(filePath);
-    fetchUserTokens();
+    fetchAndUpdateTokens();
+}
+
+function getParentUrl() {
+    const currentUrl = window.location.href;
+    const url = new URL(currentUrl);
+    url.pathname = url.pathname.substring(0, url.pathname.lastIndexOf('/'));
+    const parentUrl = url.href;
+    return parentUrl;
 }
 
 
@@ -146,74 +166,140 @@ $effect(() => {
 
 
 <div>
-
     <table>
         <thead>
             <tr>
+                <th>Name</th>
+                <th>Type</th>
             </tr>
         </thead>
         <tbody>
-            <!-- TODO SOLVE THE PARENT DIRECTORY (../) PROBLEM!!!
-            <tr>
-                <td>
-                    <a href={getParentDirectory(currentPath)}>../</a>
+            <tr class="folder">
+                <td class="file-name">
+                    <a href={getParentUrl()} class="folder-link">
+                        <span class="folder-icon">📁</span>../
+                    </a>
                 </td>
+                <td>folder</td>
             </tr>
-
-            -->
             {#each currentResources as file, i}
-                <tr>
-                    <td class={file.type}>
+                <tr class={file.type}>
+                    <td class="file-name">
                         {#if file.type === 'folder'}
-                            <a href={file.path}>{file.name}</a>
+                            <a href={file.path} class="folder-link">
+                                <span class="folder-icon">📁</span>{file.name}
+                            </a>
                         {:else}
-                        <a href="#" onclick={(event) => { 
-                            event.preventDefault(); 
-                            afterLinkDownloadEvent(file.path); 
-                        }}>{file.name}</a>
+                            <a href="#" onclick={(event) => { 
+                                event.preventDefault(); 
+                                afterLinkDownloadEvent(file.path); 
+                            }} class="file-link">
+                                <span class="file-icon">📄</span>{file.name}
+                            </a>
                         {/if}
                     </td>
+                    <td>{file.type}</td>
                 </tr>
             {/each}
         </tbody>
     </table>
 </div>
 
-
-
-
-
-
-
 <style>
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin: 20px 0;
-        font-family: 'Roboto Mono', monospace;
-        color: white;
-    }
+/* Font import */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
 
-    td {
-        padding: 10px;
-        text-align: left;
-        border: 0px;
-    }
+/* General table styles */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-family: 'Inter', sans-serif;
+    color: #fff;
+}
 
-    tr {
-        background-color: #1b1b1b;
-    }
+/* Header styles */
+th {
+    padding: 12px;
+    text-align: left;
+    background-color: #333;
+    font-weight: 500;
+}
 
-    .file {
-        color: #555;
-    }
+/* Row and cell styling */
+td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #444;
+    font-size: 14px;
+    line-height: 1.5;
+}
 
-    .action {
-        color: #007BFF;
-        cursor: pointer;
-    }
+/* Row styling */
+tr {
+    background-color: #242424;
+}
 
-    .action:hover {
-        text-decoration: underline;
-    }
+/* Hover effect */
+tr:hover {
+    background-color: #333;
+}
+
+/* Styling for folders vs files */
+.folder a {
+    color: #4CAF50;
+}
+
+.file a {
+    color: #bbb;
+}
+
+/* Hover effect for links */
+a {
+    text-decoration: none;
+    color: inherit;
+    transition: color 0.3s;
+}
+
+a:hover {
+    color: #007BFF;
+}
+
+/* Icons for file and folder */
+.folder-icon, .file-icon {
+    margin-right: 8px;
+}
+
+/* Different icon styles for folders and files */
+.folder-icon {
+    font-size: 18px;
+}
+
+.file-icon {
+    font-size: 16px;
+}
+
+/* Folder link hover effect */
+.folder-link:hover {
+    color: #4CAF50;
+}
+
+/* File link hover effect */
+.file-link:hover {
+    color: #bbb;
+}
+
+/* Styling for the "../" link to look like a folder */
+.folder {
+    background-color: #242424; /* Same as other folder rows */
+}
+
+.folder a {
+    color: #4CAF50; /* Same green color as other folder links */
+}
+
+.folder a:hover {
+    color: #4CAF50; /* Maintain hover effect consistency */
+}
+
 </style>

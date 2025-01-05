@@ -58,7 +58,7 @@ const storage = multer.diskStorage({
 const upload = multer({
      storage: storage,
      limits: {
-        fileSize: 5 * 1024 * 1024, // 5MB max file size
+        fileSize: 10 * 1024 * 1024, // 5MB max file size
      }
 });
 
@@ -79,13 +79,10 @@ router.post('/upload', upload.single('file'), async (req, res) => {
         return res.status(400).send('No file uploaded');
     }
 
-    // Check if user has enough tokens (30 tokens for upload)
     const user = await prisma.user.findUnique({
         where: { id: userId },
     });
 
-
-    // Deduct 30 tokens for uploading
     await prisma.user.update({
         where: { id: userId },
         data: {

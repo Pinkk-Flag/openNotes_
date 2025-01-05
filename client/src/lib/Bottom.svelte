@@ -12,7 +12,7 @@
   bottom: 0;
   left: 0;
   width: 100%;
-  background-color: #DAEFB3;
+  background-color: #FFB7C5;
   display: flex;
   justify-content: flex-end;
   align-items: center;
@@ -30,7 +30,7 @@
 }
 
 a {
-  color: #EF6461;
-  text-decoration: none;
+  color: #A20021;
+  text-decoration: underline;
 }
 </style>
