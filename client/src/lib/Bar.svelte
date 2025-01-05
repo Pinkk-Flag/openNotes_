@@ -30,6 +30,11 @@ async function fetchUserTokens() {
     }
 }
 
+function logout() {
+    localStorage.removeItem('token');
+    location.reload();
+}
+
 
 emitter.on('tokensUpdated', (tokens) => {
      fetchUserTokens().then((res) => {
@@ -50,6 +55,7 @@ onMount(async () => {
         <div class="token-container">
             <img src={noteToken} alt="Token Icon" class="token-icon" />
             <p class="token-amount">Current amount of tokens: {tokenAmount}</p>
+            <button class="logout-button" onclick={logout()}>Logout</button>
         </div>
     </div>
 </main>
@@ -123,6 +129,24 @@ onMount(async () => {
 /* Hover effect on token amount */
 .token-amount:hover {
     color: #007BFF;
+}
+
+.logout-button {
+    background-color: #FF4C4C; /* Red color for logout */
+    color: #fff;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 1.1em;
+    font-weight: 600;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.logout-button:hover {
+    background-color: #FF1F1F; /* Darker red on hover */
+    transform: scale(1.05);
 }
 
 /* Responsive adjustments for smaller screens */

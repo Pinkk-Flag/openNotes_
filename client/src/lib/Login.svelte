@@ -32,7 +32,13 @@
         }
     };
 
-    const authenticate = async () => {
+    const handleAuthenticationSuccess = (data) => {
+    localStorage.setItem('token', data.token);
+    console.log('Token being sent:', localStorage.getItem('token'));
+    setLoggedIn(true); // Update loggedIn state in the parent
+};
+
+const authenticate = async () => {
     authText = "";
     if (!emailValue || !passwordValue) {
         error = 'Email and password are required.';
@@ -68,10 +74,7 @@
 
             if (response.ok) {
                 data = await response.json();
-                localStorage.setItem('token', data.token);
-                console.log('Token being sent:', localStorage.getItem('token')); // Add this line to check the token value
-
-                setLoggedIn(true); // Update loggedIn state in the parent
+                handleAuthenticationSuccess(data);
             } else {
                 const errorDetails = await response.json();
                 throw new Error(`Authentication failed: ${errorDetails.message}`);
@@ -85,7 +88,10 @@
                 body: JSON.stringify({ username: emailValue, password: passwordValue })
             });
 
-            if (!response.ok) {
+            if (response.ok) {
+                data = await response.json();
+                handleAuthenticationSuccess(data);
+            } else {
                 const errorDetails = await response.json();
                 throw new Error(`Authentication failed: ${errorDetails.message}`);
             }
@@ -96,6 +102,7 @@
         authText = err.message || err;
     }
 };
+
 </script>
 
   

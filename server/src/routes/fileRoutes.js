@@ -7,7 +7,8 @@ import multer from "multer";
 import authMiddleware from "../middleware/authMiddleware.js";
 
 const router = express.Router();
-
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const downloadPenalty = 10;
 const uploadReward = 30;
 
@@ -79,6 +80,24 @@ router.post('/upload', upload.single('file'), async (req, res) => {
         return res.status(400).send('No file uploaded');
     }
 
+    // Get the path from the request (default to root if not provided)
+    const folderPath = req.body.path || '/'; 
+
+    // Sanitize the folder path to prevent path traversal attacks
+    const safeFolderPath = path.normalize(folderPath).replace(/^(\.\.[/\\])+/, '');
+
+    // Set the destination dynamically based on the folderPath
+    const uploadPath = path.join(__dirname, '../../public', safeFolderPath);
+    
+    // Ensure the directory exists (without recursion)
+    if (!fs.existsSync(uploadPath)) {
+        return res.status(400).send('Target folder does not exist');
+    }
+
+    // Move the uploaded file to the correct directory
+    const filePath = path.join(uploadPath, req.file.originalname);
+    fs.renameSync(req.file.path, filePath);
+
     const user = await prisma.user.findUnique({
         where: { id: userId },
     });
@@ -95,8 +114,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
 
 router.get('/download/*', async (req, res) => {
     const filePath = decodeURIComponent(req.params[0]);
-    const __filename = fileURLToPath(import.meta.url);
-    const __dirname = path.dirname(__filename);
+
     const absolutePath = path.join(__dirname, "../../public", filePath);
 
     if (!fs.existsSync(absolutePath)) {

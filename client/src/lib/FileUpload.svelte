@@ -10,35 +10,40 @@
     };
   
     // Function to upload the file to the server
-    const uploadFile = async () => {
-      if (!selectedFile) {
-        alert("Please select a file to upload.");
-        return;
-      }
-  
-      const formData = new FormData();
-      formData.append('file', selectedFile);
-  
-      try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(apiBase + '/files/upload', {
-          method: 'POST',
-          headers: {
-            'Authorization': token,
-          },
-          body: formData,
-        });
-  
-        if (response.ok) {
-          alert('File uploaded successfully!');
-        } else {
-          alert('Failed to upload file.');
-        }
-      } catch (error) {
-        console.error('Error uploading file:', error);
-        alert('Error uploading file.');
-      }
-    };
+const uploadFile = async () => {
+  if (!selectedFile) {
+    alert("Please select a file to upload.");
+    return;
+  }
+
+  // Get the current path (relative to root)
+  const currentPath = decodeURIComponent(window.location.pathname);
+
+  // Prepare the form data
+  const formData = new FormData();
+  formData.append('file', selectedFile);
+  formData.append('path', currentPath); // Add the current path to the form data
+
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(apiBase + '/files/upload', {
+      method: 'POST',
+      headers: {
+        'Authorization': token,
+      },
+      body: formData,
+    });
+
+    if (response.ok) {
+      alert('File uploaded successfully!');
+    } else {
+      alert('Failed to upload file.');
+    }
+  } catch (error) {
+    console.error('Error uploading file:', error);
+    alert('Error uploading file.');
+  }
+};
 
     async function fetchUserTokens() {
     try {
