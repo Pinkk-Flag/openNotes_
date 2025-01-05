@@ -1,4 +1,5 @@
 <script>
+const apiBase = 'http://localhost:8000'
 
 
 </script>
@@ -8,7 +9,7 @@
        <p id="openNotesTextLogo">openNotes_</p> 
     </div>
     <div>
-        <p>Current amount of tokens: {tokens}</p>
+        <p>Current amount of tokens: not yet updated </p>
     </div>
 
 </main>
