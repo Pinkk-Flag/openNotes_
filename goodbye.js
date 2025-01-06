@@ -1,1 +1,1 @@
-console.log("I don't know why you're reading this, but hello. This is the end of openNotes_. Been a real rollercoster..
+console.log("I don't know why you're reading this, but hello. This is the end of openNotes_. Been a real rollercoster.. I've learn so much, changed a lot, and seemingly all for nothing. I couldn't host it, cause I'm broke as fuck. Oh well.");
